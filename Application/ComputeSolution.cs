@@ -1,6 +1,7 @@
 ﻿using Core.Constants;
 using Core.Exceptions;
 using Core.Interface;
+using Core.Mapper;
 using Core.Models;
 
 namespace Application;
@@ -9,7 +10,8 @@ public class ComputeSolution : IComputeSolution
 {
     public Response Solution(Payload payload)
     {
-        var tempResult = new TemporaryResponseValues(0.0m, payload.Load, 0.0m);
+        var payloadDto = Mapper.ToPayloadDto(payload);
+        var tempResult = new TemporaryResponseValues(payload.Load);
         var sortedPowerplants = payload.GetPowerplantMeritOrder();
 
         foreach (var plant in sortedPowerplants)
@@ -18,18 +20,27 @@ public class ComputeSolution : IComputeSolution
             if (ProjectConstants.Windturbine.Equals(plant.Type.ToLower())
                 && plant.PMax != 0)
             {
-                if (ProcessWindTurbinePlant(plant, tempResult)) break;
+                if (ProcessWindTurbinePlant(plant, tempResult))
+                {
+                    break;
+                }
             }
 
             // Non-wind powerplants
             else if (!ProjectConstants.Windturbine.Equals(plant.Type.ToLower())
                     && plant.PMax != 0)
             {
-                if (ProcessGasAndJetFuelPlant(plant, tempResult)) break;
+                if (ProcessGasAndJetFuelPlant(plant, tempResult))
+                {
+                    break;
+                }
             }
         }
 
+        // Method checks if the load is reachable, throws exception if overloads or underloads
         CheckOverloadOrUnderload(tempResult, sortedPowerplants);
+
+        // Once a solution is found, the method checks if there is a more affordable one without considering wind powerplants
         tempResult = CompareCostWithoutWind(tempResult, sortedPowerplants);
 
         // Map to response type

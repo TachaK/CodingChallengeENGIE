@@ -7,7 +7,7 @@ namespace Core.Models
         public decimal LoadGoal { get; set; }
         public decimal TotalCost { get; set; }
 
-        public TemporaryResponseValues(decimal totalCapacity, decimal loadGoal, decimal totalCost)
+        public TemporaryResponseValues(decimal loadGoal, decimal totalCapacity = 0.0m, decimal totalCost = 0.0m)
         {
             TotalCapacity = totalCapacity;
             LoadGoal = loadGoal;
