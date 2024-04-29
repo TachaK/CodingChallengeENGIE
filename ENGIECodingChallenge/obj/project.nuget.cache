@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "Wgpw50Bca/GUkr6vlIpUrK3sNpIPgL1EZVZDWEpU9EE+g3G98ft4LvCEUhqkEwsel7g46SKuM3p1tEOURRiQYg==",
+  "dgSpecHash": "vfuw+KQdiPfoJ+TS5uARLXaIC/v6Znu+c5II903uSaKHoc3dEpMwjGH+EyY+Oq72d1pb7PXCtPPDbGsAPhlHEg==",
   "success": true,
-  "projectFilePath": "C:\\Users\\vanha\\source\\repos\\ENGIECodingChallenge\\ENGIECodingChallenge\\ENGIECodingChallenge.csproj",
+  "projectFilePath": "C:\\Users\\vanha\\Source\\Repos\\EngieCodingChallenge\\ENGIECodingChallenge\\ENGIECodingChallenge.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\vanha\\.nuget\\packages\\microsoft.extensions.apidescription.server\\3.0.0\\microsoft.extensions.apidescription.server.3.0.0.nupkg.sha512",
     "C:\\Users\\vanha\\.nuget\\packages\\microsoft.openapi\\1.2.3\\microsoft.openapi.1.2.3.nupkg.sha512",
