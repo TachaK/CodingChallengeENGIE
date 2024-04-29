@@ -1,10 +1,11 @@
 ﻿using Core.Constants;
+using Core.Exceptions;
 using Core.Interface;
 using Core.Models;
 
 namespace Application;
 
-public class ComputeSolution: IComputeSolution
+public class ComputeSolution : IComputeSolution
 {
     public Response Solution(Payload payload)
     {
@@ -17,11 +18,11 @@ public class ComputeSolution: IComputeSolution
             if (ProjectConstants.Windturbine.Equals(plant.Type.ToLower())
                 && plant.PMax != 0)
             {
-                if(ProcessWindTurbinePlant(plant, tempResult)) break;
+                if (ProcessWindTurbinePlant(plant, tempResult)) break;
             }
 
             // Non-wind powerplants
-            else if(!ProjectConstants.Windturbine.Equals(plant.Type.ToLower())
+            else if (!ProjectConstants.Windturbine.Equals(plant.Type.ToLower())
                     && plant.PMax != 0)
             {
                 if (ProcessGasAndJetFuelPlant(plant, tempResult)) break;
@@ -33,9 +34,12 @@ public class ComputeSolution: IComputeSolution
 
         // Map to response type
         var result = new Response();
-        foreach (var response in tempResult.PowerplantResponses)
+        result.PowerplantResponses.AddRange(tempResult.PowerplantResponses);
+
+        foreach (var powerPlant in sortedPowerplants)
         {
-            result.PowerplantResponses.Add(response);
+            if (!result.PowerplantResponses.Any(p => p.Name == powerPlant.Name))
+                result.PowerplantResponses.Add(new PowerplantResponse(powerPlant.Name, 0.0m));
         }
 
         return result;
@@ -51,16 +55,16 @@ public class ComputeSolution: IComputeSolution
         var mostUsedPowerplant = GetMostPoweredPlant(tempResult);
         var mostExpensivePowerplant = GetMostExpensivePowerplantUsed(tempResult, sortedPowerplants);
 
-        mostUsedPowerplant.Power -= unusedPowerplant.PMin;
-        tempResult.TotalCapacity -= (unusedPowerplant.PMin + mostExpensivePowerplant.Power);
+        mostUsedPowerplant.P -= unusedPowerplant.PMin;
+        tempResult.TotalCapacity -= (unusedPowerplant.PMin + mostExpensivePowerplant.P);
         tempResult.PowerplantResponses.Remove(mostExpensivePowerplant);
 
         var powerStillNeeded = tempResult.LoadGoal - tempResult.TotalCapacity;
-     
+
         var powerPlantToAdd = new PowerplantResponse(unusedPowerplant.Name, unusedPowerplant.PMin);
 
         tempResult.TotalCapacity += unusedPowerplant.PMin;
-        mostUsedPowerplant.Power += (powerStillNeeded - unusedPowerplant.PMin) ;
+        mostUsedPowerplant.P += (powerStillNeeded - unusedPowerplant.PMin);
         tempResult.TotalCapacity += (powerStillNeeded - unusedPowerplant.PMin);
 
         tempResult.PowerplantResponses.Add(powerPlantToAdd);
@@ -70,16 +74,16 @@ public class ComputeSolution: IComputeSolution
 
     private static PowerplantResponse GetMostPoweredPlant(TemporaryResponseValues response)
     {
-        var maxPower = response.PowerplantResponses.Max(p => p.Power);
-        return response.PowerplantResponses.First(item => item.Power == maxPower);
+        var maxPower = response.PowerplantResponses.Max(p => p.P);
+        return response.PowerplantResponses.First(item => item.P == maxPower);
     }
 
     private static PowerplantResponse GetMostExpensivePowerplantUsed(TemporaryResponseValues response, List<PowerplantModel> sortedPowerplants)
     {
         sortedPowerplants.Reverse();
         foreach (var plant in sortedPowerplants)
-        { 
-           return response.PowerplantResponses.Where(p => p.Name == plant.Name).FirstOrDefault();
+        {
+            return response.PowerplantResponses.Where(p => p.Name == plant.Name).FirstOrDefault();
         }
         return null;
     }
@@ -108,18 +112,16 @@ public class ComputeSolution: IComputeSolution
             }
 
             // overload
-            else if (tempResponse.TotalCapacity > tempResponse.LoadGoal)
+            if (tempResponse.TotalCapacity > tempResponse.LoadGoal)
             {
                 tempResponse.TotalCapacity -= plant.PMax;
                 return false;
             }
 
             // correct load
-            else
-            {
-                tempResponse.PowerplantResponses.Add(new PowerplantResponse(plant.Name, plant.PMax ));
-                return true;
-            }
+            tempResponse.PowerplantResponses.Add(new PowerplantResponse(plant.Name, plant.PMax));
+            return true;
+
         }
     }
 
@@ -132,22 +134,21 @@ public class ComputeSolution: IComputeSolution
         if (tempResponse.TotalCapacity == tempResponse.LoadGoal && plant.PMin != 0)
         {
             tempResponse.TotalCost += plant.Cost * plant.PMin;
-            tempResponse.PowerplantResponses.Add(new PowerplantResponse(plant.Name, plant.PMin ));
+            tempResponse.PowerplantResponses.Add(new PowerplantResponse(plant.Name, plant.PMin));
             return true;
         }
 
         // overload
-        else if (tempResponse.TotalCapacity > tempResponse.LoadGoal)
+        if (tempResponse.TotalCapacity > tempResponse.LoadGoal)
         {
             tempResponse.TotalCapacity -= plant.PMin;
             return false;
         }
 
         // underload
-        else
-        {   // If PMin added is less than load, check if PMax can be added. If not, find the power between PMin and PMax for this plant
-            return FindPowerBetweenPMinAndPMax(plant, tempResponse);
-        }
+        // If PMin added is less than load, check if PMax can be added. If not, find the power between PMin and PMax for this plant
+        return FindPowerBetweenPMinAndPMax(plant, tempResponse);
+
     }
 
     private bool FindPowerBetweenPMinAndPMax(PowerplantModel plant, TemporaryResponseValues tempResponse)
@@ -155,39 +156,37 @@ public class ComputeSolution: IComputeSolution
         tempResponse.TotalCapacity -= plant.PMin;
 
         // underload
-        if (tempResponse.LoadGoal > tempResponse.TotalCapacity  + plant.PMax )
+        if (tempResponse.LoadGoal > tempResponse.TotalCapacity + plant.PMax)
         {
             tempResponse.TotalCapacity += plant.PMax;
             tempResponse.TotalCost += plant.Cost * plant.PMin;
-            tempResponse.PowerplantResponses.Add(new PowerplantResponse(plant.Name, plant.PMax ));
+            tempResponse.PowerplantResponses.Add(new PowerplantResponse(plant.Name, plant.PMax));
             return false;
         }
 
         // correct load
-        else if (tempResponse.LoadGoal == tempResponse.TotalCapacity  + plant.PMax )
+        if (tempResponse.LoadGoal == tempResponse.TotalCapacity + plant.PMax)
         {
             tempResponse.TotalCost += plant.Cost * plant.PMin;
-            tempResponse.PowerplantResponses.Add(new PowerplantResponse(plant.Name, plant.PMax ));
+            tempResponse.PowerplantResponses.Add(new PowerplantResponse(plant.Name, plant.PMax));
             return true;
         }
 
         //overload
-        else
+        while (tempResponse.TotalCapacity != tempResponse.LoadGoal)
         {
-            while (tempResponse.TotalCapacity != tempResponse.LoadGoal)
+            plant.PMin += 0.1m;
+            tempResponse.TotalCapacity += plant.PMin;
+            if (tempResponse.TotalCapacity != tempResponse.LoadGoal)
+                tempResponse.TotalCapacity -= plant.PMin;
+
+            else
             {
-                plant.PMin += 0.1m ;
-                tempResponse.TotalCapacity += plant.PMin ;
-                if (tempResponse.TotalCapacity  != tempResponse.LoadGoal )
-                    tempResponse.TotalCapacity -= plant.PMin;
-                else
-                {
-                    tempResponse.TotalCost += plant.Cost * plant.PMin;
-                    tempResponse.PowerplantResponses.Add(new PowerplantResponse(plant.Name, plant.PMin));
-                }
-            };
-            return false;
-        }
+                tempResponse.TotalCost += plant.Cost * plant.PMin;
+                tempResponse.PowerplantResponses.Add(new PowerplantResponse(plant.Name, plant.PMin));
+            }
+        };
+        return false;
     }
 
     private TemporaryResponseValues CompareCostWithoutWind(TemporaryResponseValues tempResult, List<PowerplantModel> sortedPowerplants)
@@ -210,18 +209,23 @@ public class ComputeSolution: IComputeSolution
 
         if (firstCost > secondCost)
             return noWindTempResult;
-        else
-            return tempResult;
+
+        return tempResult;
     }
 
     private void CheckOverloadOrUnderload(TemporaryResponseValues tempResult, List<PowerplantModel> sortedPowerplants)
     {
-        if (tempResult.PowerplantResponses.Sum(plant => plant.Power) != tempResult.LoadGoal)
+        if (tempResult.PowerplantResponses.Sum(plant => plant.P) != tempResult.LoadGoal)
         {
             if (tempResult.PowerplantResponses.Count == sortedPowerplants.Count || tempResult.PowerplantResponses.Count == 0)
-                throw new Exception();
-            else
-                tempResult = ReProcessLoadBalancing(tempResult, sortedPowerplants);
+            {
+                if (tempResult.PowerplantResponses.Sum(plant => plant.P) < tempResult.LoadGoal)
+                    throw new CustomException("The load is unreachable");
+                else
+                    throw new CustomException("The load is exceeded");
+            }
+
+            tempResult = ReProcessLoadBalancing(tempResult, sortedPowerplants);
         }
     }
 }

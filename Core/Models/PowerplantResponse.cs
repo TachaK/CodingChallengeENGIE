@@ -6,10 +6,10 @@ namespace Core.Models
         public PowerplantResponse(string name, decimal power)
         {
             Name = name;
-            Power = power;
+            P = power;
         }
 
         public string Name { get; set; }
-        public decimal Power { get; set; }
+        public decimal P { get; set; }
     }
 }
