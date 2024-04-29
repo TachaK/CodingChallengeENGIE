@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\vanha\\Source\\Repos\\EngieCodingChallenge\\Core\\Core.csproj": {}
+    "C:\\Users\\vanha\\source\\repos\\EngieCodingChallenge\\Core\\Core.csproj": {}
   },
   "projects": {
-    "C:\\Users\\vanha\\Source\\Repos\\EngieCodingChallenge\\Core\\Core.csproj": {
+    "C:\\Users\\vanha\\source\\repos\\EngieCodingChallenge\\Core\\Core.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\vanha\\Source\\Repos\\EngieCodingChallenge\\Core\\Core.csproj",
+        "projectUniqueName": "C:\\Users\\vanha\\source\\repos\\EngieCodingChallenge\\Core\\Core.csproj",
         "projectName": "Core",
-        "projectPath": "C:\\Users\\vanha\\Source\\Repos\\EngieCodingChallenge\\Core\\Core.csproj",
+        "projectPath": "C:\\Users\\vanha\\source\\repos\\EngieCodingChallenge\\Core\\Core.csproj",
         "packagesPath": "C:\\Users\\vanha\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\vanha\\Source\\Repos\\EngieCodingChallenge\\Core\\obj\\",
+        "outputPath": "C:\\Users\\vanha\\source\\repos\\EngieCodingChallenge\\Core\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
