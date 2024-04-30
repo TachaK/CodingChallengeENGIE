@@ -1,20 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Core.Enum;
+using Newtonsoft.Json.Converters;
+using System.Text.Json.Serialization;
 
 namespace Core.Dto
 {
     public class PowerplantDto
     {
         public string Name { get; set; }
-        public string Type { get; set; }
+
+        [JsonConverter(typeof(StringEnumConverter))]
+        public PlantTypeEnum Type { get; set; }
         public decimal Efficiency { get; set; }
         public decimal PMin { get; set; }
         public decimal PMax { get; set; }
 
-        public PowerplantDto(string name, string type, decimal efficiency, decimal pMin, decimal pMax)
+        public PowerplantDto(string name, PlantTypeEnum type, decimal efficiency, decimal pMin, decimal pMax)
         {
             Name = name;
             Type = type;

@@ -1,8 +1,11 @@
 ﻿using Core.Constants;
+using Core.Dto;
+using Core.Enum;
 using Core.Exceptions;
 using Core.Interface;
 using Core.Mapper;
 using Core.Models;
+using Mapster;
 
 namespace Application;
 
@@ -10,34 +13,34 @@ public class ComputeSolution : IComputeSolution
 {
     public Response Solution(Payload payload)
     {
-        var payloadDto = Mapper.ToPayloadDto(payload);
-        var tempResult = new TemporaryResponseValues(payload.Load);
-        var sortedPowerplants = payload.GetPowerplantMeritOrder();
+        var payloadDto = payload.Adapt<PayloadDto>();
+        var tempResult = new TemporaryResponseValues(payloadDto.Load);
+        var sortedPowerplants = payloadDto.GetPowerplantMeritOrder().ToList();
 
         foreach (var plant in sortedPowerplants)
         {
             // Wind powerplants
-            if (ProjectConstants.Windturbine.Equals(plant.Type.ToLower())
+            if (PlantTypeEnum.windturbine.Equals(plant.Type)
                 && plant.PMax != 0)
             {
-                if (ProcessWindTurbinePlant(plant, tempResult))
+                if (IsLoadReachedWithWindTurbinePlant(plant, tempResult))
                 {
                     break;
                 }
             }
 
             // Non-wind powerplants
-            else if (!ProjectConstants.Windturbine.Equals(plant.Type.ToLower())
+            else if (!PlantTypeEnum.windturbine.Equals(plant.Type)
                     && plant.PMax != 0)
             {
-                if (ProcessGasAndJetFuelPlant(plant, tempResult))
+                if (IsLoadReachedWithGasAndJetFuelPlant(plant, tempResult))
                 {
                     break;
                 }
             }
         }
 
-        // Method checks if the load is reachable, throws exception if overloads or underloads
+        // Method checks if the load is reachable; throws exception if overloads or underloads
         CheckOverloadOrUnderload(tempResult, sortedPowerplants);
 
         // Once a solution is found, the method checks if there is a more affordable one without considering wind powerplants
@@ -103,14 +106,19 @@ public class ComputeSolution : IComputeSolution
     {
         foreach (var plant in sortedPowerplants)
         {
-            if (plant.PMax == 0) continue;
-            if (response.PowerplantResponses.All(p => p.Name != plant.Name)) return plant;
-
+            if (plant.PMax == 0)
+            {
+                continue;
+            }
+            if (response.PowerplantResponses.All(p => p.Name != plant.Name))
+            {
+                 return plant;
+            }
         }
         return null;
     }
 
-    private bool ProcessWindTurbinePlant(PowerplantModel plant, TemporaryResponseValues tempResponse)
+    private bool IsLoadReachedWithWindTurbinePlant(PowerplantModel plant, TemporaryResponseValues tempResponse)
     {
         {
             tempResponse.TotalCapacity += plant.PMax;
@@ -136,7 +144,7 @@ public class ComputeSolution : IComputeSolution
         }
     }
 
-    private bool ProcessGasAndJetFuelPlant(PowerplantModel plant, TemporaryResponseValues tempResponse)
+    private bool IsLoadReachedWithGasAndJetFuelPlant(PowerplantModel plant, TemporaryResponseValues tempResponse)
     {
 
         tempResponse.TotalCapacity += plant.PMin;
@@ -189,8 +197,9 @@ public class ComputeSolution : IComputeSolution
             plant.PMin += 0.1m;
             tempResponse.TotalCapacity += plant.PMin;
             if (tempResponse.TotalCapacity != tempResponse.LoadGoal)
+            {
                 tempResponse.TotalCapacity -= plant.PMin;
-
+            }
             else
             {
                 tempResponse.TotalCost += plant.Cost * plant.PMin;
@@ -207,19 +216,23 @@ public class ComputeSolution : IComputeSolution
 
         foreach (var plant in sortedPowerplants)
         {
-            if (!plant.Type.Equals(ProjectConstants.Windturbine))
+            if (!plant.Type.Equals(PlantTypeEnum.windturbine))
+            {
                 sortedGasAndJetPowerplants.Add(plant);
+            }
         }
-        var noWindTempResult = new TemporaryResponseValues(0.0m, tempResult.LoadGoal, 0.0m);
+        var noWindTempResult = new TemporaryResponseValues(tempResult.LoadGoal);
         foreach (var plant in sortedGasAndJetPowerplants)
         {
-            ProcessGasAndJetFuelPlant(plant, noWindTempResult);
+            IsLoadReachedWithGasAndJetFuelPlant(plant, noWindTempResult);
         }
 
         var secondCost = noWindTempResult.TotalCost;
 
         if (firstCost > secondCost)
+        {
             return noWindTempResult;
+        }
 
         return tempResult;
     }
@@ -231,9 +244,13 @@ public class ComputeSolution : IComputeSolution
             if (tempResult.PowerplantResponses.Count == sortedPowerplants.Count || tempResult.PowerplantResponses.Count == 0)
             {
                 if (tempResult.PowerplantResponses.Sum(plant => plant.P) < tempResult.LoadGoal)
+                {
                     throw new CustomException("The load is unreachable");
+                }
                 else
+                {
                     throw new CustomException("The load is exceeded");
+                }
             }
 
             tempResult = ReProcessLoadBalancing(tempResult, sortedPowerplants);

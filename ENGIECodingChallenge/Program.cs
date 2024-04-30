@@ -1,5 +1,6 @@
 using Application;
 using Core.Interface;
+using Core.Mapper;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +11,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IComputeSolution, ComputeSolution>();
+builder.Services.AddScoped<IMapper, Mapper>();
 
 var app = builder.Build();
 

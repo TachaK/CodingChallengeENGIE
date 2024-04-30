@@ -1,54 +1,22 @@
 ﻿using Core.Dto;
+using Core.Interface;
 using Core.Models;
+using Mapster;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Core.Mapper;
 
-public static class Mapper
+public class Mapper : IMapper
 {
-    public static PowerplantModel ToPowerplantModel(PowerplantDto powerplant, decimal merit, decimal cost)
+    public void RegisterMapsterConfiguration()
     {
-        var powerplantModel = new PowerplantModel
-        {
-            Name = powerplant.Name,
-            Type = powerplant.Type,
-            Efficiency = powerplant.Efficiency,
-            PMin = powerplant.PMin,
-            PMax = powerplant.PMax,
-            Merit = merit,
-            Cost = cost
-        };
-        return powerplantModel;
-    }
-
-    public static PayloadDto ToPayloadDto(Payload payload)
-    {
-        var payloadDto = new PayloadDto
-        {
-            Load = payload.Load,
-            Fuels = payload.Fuels,
-            PowerPlants = payload.PowerPlants,
-        };
-        return payloadDto;
-    }
-
-    public static FuelsDto ToFuelsDto(Fuels fuels)
-    {
-        var fuelsDto = new FuelsDto
-        {
-
-        }
-    }
-
-    public static PowerplantDto ToPowerplantDto(Powerplant powerplant)
-    {
-        var PowerplantDto = new PowerplantDto
-        {
-            Name = powerplant.Name,
-            Type = powerplant.Type,
-            Efficiency = powerplant.Efficiency,
-            PMin = powerplant.PMin,
-            PMax = powerplant.PMax,
-        };
-        return PowerplantDto;
+        TypeAdapterConfig<PowerplantDto, PowerplantModel>
+            .NewConfig();
+        TypeAdapterConfig<Payload, PayloadDto>
+            .NewConfig();
+        TypeAdapterConfig<Powerplant, PowerplantDto>
+            .NewConfig();
+        TypeAdapterConfig<Fuels, FuelsDto>
+            .NewConfig();
     }
 }
